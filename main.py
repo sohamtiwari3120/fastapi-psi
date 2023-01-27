@@ -50,7 +50,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
     try:
         while True:
             frame, originatingTime = readFrame(input)
-            await manager.send_personal_message(f"{frame}", websocket)
+            await manager.send_personal_message(frame, websocket)
             await asyncio.sleep(0.01)
 
     except Exception as e:
