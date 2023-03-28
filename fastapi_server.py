@@ -49,8 +49,13 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
     await manager.connect(websocket)
     try:
         while True:
+            print(f"[{client_id}] Waiting for zeromq input...")
             frame, originatingTime = readFrame(input)
-            await manager.send_personal_message(frame, websocket)
+            print(f"Received from PSI: {frame.decode()}, {originatingTime}")
+            message = f"{{\"flag\":{1}, \"message\":\"{frame.decode()}\"}}"
+            # if type(eval(message)) == str:
+            # if type(message) == str
+            await manager.send_personal_message(message, websocket)
             await asyncio.sleep(0.01)
 
     except Exception as e:
