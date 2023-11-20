@@ -53,12 +53,17 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
             # waiting from fe, when it says a text or "hello I am rachel", to send to psi
             print(f"Waitingg for FE")
             data = await websocket.receive_text()
-            print(f"Message received from FE {json.loads(data)}")
+            try:
+                data = json.loads(data)
+            except Exception as e:
+                logging.error(e, exc_info=True, stack_info=True)
+            print(type(data), data)
+            print(f"Message received from FE {data}")
             send_payload(output_sock, "fe-tts", data, originatingTime=None)
 
             # waiting for input from psi to send to fe
             print(f"[{client_id}] Waiting for zeromq input...")
-            frame, originatingTime = readFrame(input)
+            frame, originatingTime = await readFrame(input)
             print(f"Received from PSI: {frame.decode()}, {originatingTime}")
             message = f"{{\"flag\":{1}, \"message\":\"{frame.decode()}\"}}"
             # message = f"{{\"flag\":{1}, \"message\":\"{'alright alright alright'}\"}}"
@@ -69,7 +74,6 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
             # if type(message) == str
             await manager.send_personal_message(message, websocket)
             
-            # await manager.send_personal_message(message2, websocket)
             await asyncio.sleep(0.01)
 
     except Exception as e:
@@ -77,6 +81,22 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
         manager.disconnect(websocket)
         print(f"Client #{client_id} left the chat")
         await manager.broadcast(f"Client #{client_id} left the chat")
+    
+@app.websocket("/ws2/{client_id}")
+async def websocket_endpoint2(websocket: WebSocket, client_id: int):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # waiting from fe, when it says a text or "hello I am rachel", to send to psi
+            data = await websocket.receive_text()
+            print(f"Code received from FE {data}")
+            await asyncio.sleep(0.01)
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8081)
+    except Exception as e:
+        logging.error(e, exc_info=True, stack_info=True)
+        manager.disconnect(websocket)
+        print(f"Client #{client_id} left the code support")
+        await manager.broadcast(f"Client #{client_id} left the code support")
+
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8081, workers=4)

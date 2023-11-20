@@ -33,9 +33,9 @@ def create_sub_socket(ip_address:str=''):
     socket.connect(ip_address)
     return socket
 
-def readFrame(socket):
-    [topic, payload] = socket.recv_multipart()
-    message = msgpack.unpackb(payload, raw=True)
+async def readFrame(socket):
+    [topic, payload] = await socket.recv_multipart()
+    message = await msgpack.unpackb(payload, raw=True)
     frame = message[b"message"]
     originatingTime = message[b"originatingTime"]
     return (frame, originatingTime)
