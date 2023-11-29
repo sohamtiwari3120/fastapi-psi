@@ -2,7 +2,12 @@
 ZeroMQ utility functions
 """
 
-import zmq, datetime, msgpack, time, json
+import datetime, msgpack, time, json
+import asyncio
+import zmq
+import zmq.asyncio
+
+ctx = zmq.asyncio.Context()
 
 def generate_current_dotnet_datetime_ticks(base_time = datetime.datetime(1, 1, 1)):
     return (datetime.datetime.utcnow() - base_time)/datetime.timedelta(microseconds=1) * 1e1
@@ -26,6 +31,13 @@ def create_socket(ip_address='tcp://*:40003'):
     socket.bind(ip_address)
     return socket
 
+def create_async_socket(ip_address='tcp://*:40003'):
+    context = zmq.asyncio.Context()
+    socket = context.socket(zmq.PUB)
+    socket.bind(ip_address)
+    return socket
+
+
 # ZMQ UTILS
 def create_sub_socket(ip_address:str=''):
     context = zmq.Context()
@@ -33,9 +45,9 @@ def create_sub_socket(ip_address:str=''):
     socket.connect(ip_address)
     return socket
 
-async def readFrame(socket):
-    [topic, payload] = await socket.recv_multipart()
-    message = await msgpack.unpackb(payload, raw=True)
+def readFrame(socket):
+    [topic, payload] = socket.recv_multipart()
+    message = msgpack.unpackb(payload, raw=True)
     frame = message[b"message"]
     originatingTime = message[b"originatingTime"]
     return (frame, originatingTime)
